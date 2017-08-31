@@ -2,3 +2,10 @@
 
 
 
+class TheUser(object):
+	pass
+	
+
+
+
+

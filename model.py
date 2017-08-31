@@ -11,10 +11,10 @@ class JsonEncodedDict(sq.TypeDecorator):
   impl = sq.String
 
   def process_bind_param(self, value, dialect):
-    return simplejson.dumps(value)
+    return json.dumps(value)
 
   def process_result_value(self, value, dialect):
-    return simplejson.loads(value)
+    return json.loads(value)
 
 mutable.MutableDict.associate_with(JsonEncodedDict)
 
@@ -22,38 +22,40 @@ mutable.MutableDict.associate_with(JsonEncodedDict)
 BaseClass = declarative_base()
 
 class XRole(BaseClass):
-  __tablename__ = 'roles'
+  __tablename__ = 'troles'
   id = sq.Column(sq.Integer, primary_key=True) 
   name = sq.Column(sq.String)
   foregin_name = sq.Column(sq.String)
   description = sq.Column(sq.String)
   source = sq.Column(sq.String)
   expire_at = sq.Column(sq.DateTime)
-  user_id = sq.Column(sq.Integer, sq.ForeignKey('users.id'))
+  user_id = sq.Column(sq.Integer, sq.ForeignKey('tusers.id'))
   user = relationship('XUser', back_populates='roles')
 
 class XUser(BaseClass):
-  __tablename__ = 'users'
+  __tablename__ = 'tusers'
   id = sq.Column(sq.Integer, primary_key=True)
   name = sq.Column(sq.String)
   attributes = sq.Column(JsonEncodedDict)
-  tasks = relationship('XTask', back_populates='users')
-  processes = relationship('XProcess', back_populates='users')
-  roles = relationship('XRole', back_populates='users')
+  tasks = relationship('XTask', back_populates='owner')
+  processes = relationship('XProcess', back_populates='owner')
+  roles = relationship('XRole', back_populates='user')
 
 class XProcess(BaseClass):
-  __tablename__ = 'processes'
+  __tablename__ = 'tprocesses'
   id = sq.Column(sq.Integer, primary_key=True)
-  owner_id = sq.Column(sq.Integer, sq.ForeignKey('users.id'))
+  owner_id = sq.Column(sq.Integer, sq.ForeignKey('tusers.id'))
   owner = relationship('XUser', back_populates='processes')
-  conditions = relationship('XCondition', back_populates='processes')
+  conditions = relationship('XCondition', back_populates='process')
+  tasks = relationship('XTask', back_populates='process')
   data = sq.Column(sq.String) 
 
 class XCondition(BaseClass):
-  __tablename__ = 'conditions'
+  __tablename__ = 'tconditions'
   id = sq.Column(sq.Integer, primary_key=True)
-  process_is = sq.Column(sq.Integer, sq.ForeignKey('processes.id'))
+  process_id = sq.Column(sq.Integer, sq.ForeignKey('tprocesses.id'))
   process = relationship('XProcess', back_populates='conditions')
+  tasks = relationship('XTask', back_populates='condition')
   module = sq.Column(sq.String)
   params = sq.Column(JsonEncodedDict)
   start_at = sq.Column(sq.DateTime)
@@ -62,14 +64,14 @@ class XCondition(BaseClass):
 
   
 class XTask(BaseClass):
-  __tablename__ = 'tasks'
+  __tablename__ = 'ttasks'
   id = sq.Column(sq.Integer, primary_key=True)
   params = sq.Column(sq.String)
-  condition_id = sq.Column(sq.Integer, sq.ForeignKey('conditions.id'))
+  condition_id = sq.Column(sq.Integer, sq.ForeignKey('tconditions.id'))
   condition = relationship('XCondition', back_populates='tasks')
-  process_is = sq.Column(sq.Integer, sq.ForeignKey('processes.id'))
+  process_id = sq.Column(sq.Integer, sq.ForeignKey('tprocesses.id'))
   process = relationship('XProcess', back_populates='tasks')
-  owner_id = sq.Column(sq.Integer, sq.ForeignKey('users.id'))
+  owner_id = sq.Column(sq.Integer, sq.ForeignKey('tusers.id'))
   owner = relationship('XUser', back_populates='tasks')
 
 
